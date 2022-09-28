@@ -1,9 +1,20 @@
 package minijava;
 
+import minijava.symbol.Symbol;
+import minijava.symbol.SymbolTable;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashMap;
+
 public class ScopeChecker extends MiniJavaGrammarBaseListener {
 
 
     MiniJavaGrammarParser parser;
+    HashMap<Symbol, SymbolTable> scopes = new HashMap<>();
+    Deque<Symbol> scopeStack = new ArrayDeque<>();
+    Symbol currentScope;
+
     boolean anyErrors;
 
     public void printError(String error) {
@@ -15,10 +26,24 @@ public class ScopeChecker extends MiniJavaGrammarBaseListener {
     public ScopeChecker(MiniJavaGrammarParser parse) {
         this.parser = parse;
         this.anyErrors = false;
+        scopes.put(Symbol.symbol("Global"), new SymbolTable());
+        scopeStack.push(Symbol.symbol("Global"));
+    }
+
+    public void beginScope(String name) {
+        scopeStack.push(currentScope);
+        SymbolTable oldScope = scopes.get(currentScope);
+        currentScope = Symbol.symbol(name);
+        scopes.put(Symbol.symbol(name), oldScope);
+    }
+
+    public void endScope(String name) {
+        currentScope = scopeStack.pop();
     }
 
     @Override
     public void enterProgram(MiniJavaGrammarParser.ProgramContext ctx) {
+        beginScope("Program");
         // create a scope for the program
         System.out.println("Entered program");
     }
