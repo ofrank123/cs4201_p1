@@ -1,59 +1,50 @@
 package minijava.symbol;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
-enum TypeE {
-    INT,
-    BOOLEAN,
-    INT_ARRAY,
-    ID
-}
-
-class Type {
-    TypeE type;
-    Symbol name;
-
-    public Type(TypeE type) {
-        this.type = type;
-        switch (type) {
-            case INT: {
-                this.name = Symbol.symbol("int");
-                break;
-            }
-            case BOOLEAN: {
-                this.name = Symbol.symbol("boolean");
-                break;
-            }
-            case INT_ARRAY: {
-                this.name = Symbol.symbol("int[]");
-                break;
-            }
-            case ID: {
-                System.err.println("Cannot create ID type without name");
-                System.exit(-1);
-            }
-        }
-    }
-
-    public Type(TypeE type, String name) {
-        this.type = type;
-        this.name = Symbol.symbol(name);
-    }
-}
 
 public class SymbolTable {
     SymbolTable parent;
-    HashMap<Symbol, Type> bindings;
-    public SymbolTable() {
+    ArrayList<SymbolTable> children = new ArrayList<>();
+    String name;
+    HashMap<Symbol, Type> bindings = new HashMap<>();
+    HashMap<Symbol, MethodSignature> methodBindings = new HashMap<>();
+    HashMap<Symbol, Symbol> classDeclarations = new HashMap<>();
+
+    public SymbolTable(String name) {
         parent = null;
+        this.name = name;
     }
 
-    public SymbolTable(SymbolTable parent) {
+    public SymbolTable(SymbolTable parent, String name) {
+        this.name = name;
         this.parent = parent;
+        parent.children.add(this);
     }
 
-    public void addBinding(String name, Type type) {
-        bindings.put(Symbol.symbol(name), type);
+    boolean hasBinding()  {
+        return !bindings.containsKey(Symbol.symbol(name)) && !methodBindings.containsKey(Symbol.symbol(name));
+    }
+
+
+    public boolean addBinding(String name, String typeName) {
+        if (hasBinding()) {
+            bindings.put(Symbol.symbol(name), new Type(typeName));
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean addMethodBinding(String name, MethodSignature methodSig) {
+        if (hasBinding()) {
+            methodBindings.put(Symbol.symbol(name), methodSig);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public boolean hasBinding(String name) {
@@ -61,6 +52,31 @@ public class SymbolTable {
     }
 
     public Type getType(String name) {
-        return bindings.get(Symbol.symbol(name));
+        if (bindings.containsKey(Symbol.symbol(name))) {
+            return bindings.get(Symbol.symbol(name));
+        } else if (parent != null){
+            parent.getType(name);
+        }
+        return null;
+    }
+
+    public void print() {
+        printWithOffset(0);
+    }
+
+    void printWithOffset(int offset) {
+        String o = "|\t".repeat(offset);
+        System.out.println(o + "|---");
+        System.out.println(o + "| " + name);
+        System.out.println(o + "|---");
+        for (Map.Entry<Symbol, Type> binding : bindings.entrySet()) {
+            System.out.println(o + "| " + binding.getKey() + ": " + binding.getValue());
+        }
+        for (Map.Entry<Symbol, MethodSignature> binding : methodBindings.entrySet()) {
+            System.out.println(o + "| " + binding.getKey() + ": " + binding.getValue());
+        }
+        for (SymbolTable child : children) {
+            child.printWithOffset(offset + 1);
+        }
     }
 }

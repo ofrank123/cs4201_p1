@@ -1,8 +1,11 @@
 package minijava;
 
+import minijava.symbol.MethodSignature;
 import minijava.symbol.Symbol;
 import minijava.symbol.SymbolTable;
+import minijava.symbol.Type;
 
+import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -14,6 +17,7 @@ public class ScopeChecker extends MiniJavaGrammarBaseListener {
     HashMap<Symbol, SymbolTable> scopes = new HashMap<>();
     Deque<Symbol> scopeStack = new ArrayDeque<>();
     Symbol currentScope;
+    MethodSignature currentMethod;
 
     boolean anyErrors;
 
@@ -26,18 +30,35 @@ public class ScopeChecker extends MiniJavaGrammarBaseListener {
     public ScopeChecker(MiniJavaGrammarParser parse) {
         this.parser = parse;
         this.anyErrors = false;
-        scopes.put(Symbol.symbol("Global"), new SymbolTable());
+        currentScope = Symbol.symbol("Global");
+        scopes.put(Symbol.symbol("Global"), new SymbolTable("Global"));
         scopeStack.push(Symbol.symbol("Global"));
     }
 
-    public void beginScope(String name) {
-        scopeStack.push(currentScope);
-        SymbolTable oldScope = scopes.get(currentScope);
-        currentScope = Symbol.symbol(name);
-        scopes.put(Symbol.symbol(name), oldScope);
+    SymbolTable getCurrentSymbolTable() {
+        return scopes.get(currentScope);
     }
 
-    public void endScope(String name) {
+    void addBinding(String name, String typeName) {
+        if (!getCurrentSymbolTable().addBinding(name, typeName)) {
+            printError("Symbol " + name + " has already been used");
+        }
+    }
+
+    void addMethodBinding(String name) {
+        if (!getCurrentSymbolTable().addMethodBinding(name, currentMethod)) {
+            printError("Symbol " + name + " has already been used");
+        }
+    }
+
+    public void beginScope(String name) {
+        SymbolTable oldSymboltable = getCurrentSymbolTable();
+        scopeStack.push(currentScope);
+        currentScope = Symbol.symbol(name);
+        scopes.put(currentScope, new SymbolTable(oldSymboltable, name));
+    }
+
+    public void endScope() {
         currentScope = scopeStack.pop();
     }
 
@@ -51,6 +72,8 @@ public class ScopeChecker extends MiniJavaGrammarBaseListener {
 
     @Override
     public void exitProgram(MiniJavaGrammarParser.ProgramContext ctx) {
+        endScope();
+        getCurrentSymbolTable().print();
         if (anyErrors) {
             System.exit(-1);
         }
@@ -58,34 +81,31 @@ public class ScopeChecker extends MiniJavaGrammarBaseListener {
 
     @Override
     public void enterMainclass(MiniJavaGrammarParser.MainclassContext ctx) {
-        System.out.println("Entered main class");
-
+        beginScope(ctx.ID(0).getText());
+        System.out.println(currentScope);
     }
 
-    //
     @Override
     public void exitMainclass(MiniJavaGrammarParser.MainclassContext ctx) {
-//      //  System.out.println("exitMainClass");
+        endScope();
     }
 
-    //
     @Override
     public void enterClassdecl(MiniJavaGrammarParser.ClassdeclContext ctx) {
-//
-//
+        String s = "something";
+        beginScope(ctx.ID(0).getText());
     }
 
     //
     @Override
     public void exitClassdecl(MiniJavaGrammarParser.ClassdeclContext ctx) {
-
+        endScope();
     }
 
     //
     @Override
     public void enterVardecl(MiniJavaGrammarParser.VardeclContext ctx) {
-
-
+        addBinding(ctx.ID().getText(), ctx.type().getText());
     }
 
     //
@@ -97,38 +117,42 @@ public class ScopeChecker extends MiniJavaGrammarBaseListener {
     //
     @Override
     public void enterMethoddecl(MiniJavaGrammarParser.MethoddeclContext ctx) {
+        beginScope(ctx.ID().getText());
 
+        currentMethod = new MethodSignature(ctx.type().getText());
     }
 
     //
     @Override
     public void exitMethoddecl(MiniJavaGrammarParser.MethoddeclContext ctx) {
+        endScope();
 
+        addMethodBinding(ctx.ID().getText());
+        currentMethod = null;
     }
 
     //
     @Override
     public void enterFormallist(MiniJavaGrammarParser.FormallistContext ctx) {
-
+        addBinding(ctx.ID().getText(), ctx.type().getText());
+        currentMethod.addParameter(ctx.type().getText());
     }
 
     //
     @Override
     public void exitFormallist(MiniJavaGrammarParser.FormallistContext ctx) {
-        System.out.println(ctx.ID().getSymbol().getText());
     }
 
     //
     @Override
     public void enterFormalrest(MiniJavaGrammarParser.FormalrestContext ctx) {
-
+        addBinding(ctx.ID().getText(), ctx.type().getText());
     }
 
 
     //
     @Override
     public void exitFormalrest(MiniJavaGrammarParser.FormalrestContext ctx) {
-        System.out.println("exitFormalrest");
     }
 
     //
