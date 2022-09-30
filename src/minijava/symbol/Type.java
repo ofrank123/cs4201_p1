@@ -37,4 +37,23 @@ public class Type {
     public String toString() {
         return name.toString();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+
+        if (!(o instanceof Type)) {
+            return false;
+        }
+
+        Type t = (Type) o;
+
+        if (this.type == TypeE.ID) {
+            return t.type == TypeE.ID && t.name.equals(this.name);
+        } else {
+            return t.type == this.type;
+        }
+    }
 }

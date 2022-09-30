@@ -1,8 +1,6 @@
 package minijava.symbol;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 
 public class SymbolTable {
@@ -11,7 +9,7 @@ public class SymbolTable {
     String name;
     HashMap<Symbol, Type> bindings = new HashMap<>();
     HashMap<Symbol, MethodSignature> methodBindings = new HashMap<>();
-    HashMap<Symbol, Symbol> classDeclarations = new HashMap<>();
+    HashSet<Symbol> classDeclarations = new HashSet<>();
 
     public SymbolTable(String name) {
         parent = null;
@@ -24,13 +22,15 @@ public class SymbolTable {
         parent.children.add(this);
     }
 
-    boolean hasBinding()  {
-        return !bindings.containsKey(Symbol.symbol(name)) && !methodBindings.containsKey(Symbol.symbol(name));
+    boolean bindingAvailable(String name)  {
+        return !bindings.containsKey(Symbol.symbol(name)) &&
+                !methodBindings.containsKey(Symbol.symbol(name)) &&
+                !classDeclarations.contains(Symbol.symbol(name));
     }
 
 
     public boolean addBinding(String name, String typeName) {
-        if (hasBinding()) {
+        if (bindingAvailable(name)) {
             bindings.put(Symbol.symbol(name), new Type(typeName));
             return true;
         } else {
@@ -39,7 +39,7 @@ public class SymbolTable {
     }
 
     public boolean addMethodBinding(String name, MethodSignature methodSig) {
-        if (hasBinding()) {
+        if (bindingAvailable(name)) {
             methodBindings.put(Symbol.symbol(name), methodSig);
             return true;
         } else {
@@ -47,10 +47,14 @@ public class SymbolTable {
         }
     }
 
-    public boolean hasBinding(String name) {
-        return bindings.containsKey(Symbol.symbol(name));
+    public boolean addClassDecl(String name) {
+        if (bindingAvailable(name))  {
+            classDeclarations.add(Symbol.symbol(name));
+            return true;
+        } else {
+            return false;
+        }
     }
-
     public Type getType(String name) {
         if (bindings.containsKey(Symbol.symbol(name))) {
             return bindings.get(Symbol.symbol(name));
@@ -61,22 +65,47 @@ public class SymbolTable {
     }
 
     public void print() {
-        printWithOffset(0);
+        printWithOffset("");
     }
 
-    void printWithOffset(int offset) {
-        String o = "|\t".repeat(offset);
-        System.out.println(o + "|---");
-        System.out.println(o + "| " + name);
-        System.out.println(o + "|---");
-        for (Map.Entry<Symbol, Type> binding : bindings.entrySet()) {
-            System.out.println(o + "| " + binding.getKey() + ": " + binding.getValue());
+    void printWithOffset(String o) {
+        System.out.println("\033[0;1m" + name + "\033[0;0m");
+        Iterator<Map.Entry<Symbol, Type>> bindingsIter = bindings.entrySet().iterator();
+        for (int i = 0; i < bindings.size(); i++) {
+            Map.Entry<Symbol, Type> binding = bindingsIter.next();
+            String prefix = "├── ";
+            if (i == bindings.size() - 1 && children.size() == 0 && methodBindings.size() == 0) {
+                prefix = "└── ";
+            }
+            System.out.println(o + prefix + binding.getKey() + ": " + binding.getValue());
         }
-        for (Map.Entry<Symbol, MethodSignature> binding : methodBindings.entrySet()) {
-            System.out.println(o + "| " + binding.getKey() + ": " + binding.getValue());
+        Iterator<Map.Entry<Symbol, MethodSignature>> methodIter = methodBindings.entrySet().iterator();
+        for (int i = 0; i < methodBindings.size(); i++) {
+            Map.Entry<Symbol, MethodSignature> binding = methodIter.next();
+            String prefix = "├── ";
+            if (i == methodBindings.size() - 1 && children.size() == 0) {
+                prefix = "└── ";
+            }
+            System.out.println(o + prefix + binding.getKey() + ": " + binding.getValue());
         }
-        for (SymbolTable child : children) {
-            child.printWithOffset(offset + 1);
+        Iterator<Symbol> classIter = classDeclarations.iterator();
+        for (int i = 0; i < classDeclarations.size(); i++) {
+            String prefix = "├── class ";
+            if (i == classDeclarations.size() - 1 && children.size() == 0) {
+                prefix = "└── class ";
+            }
+            System.out.println(o + prefix + classIter.next());
+        }
+        for (int i = 0; i < children.size(); i++) {
+            String prefix = "├── ";
+            if (i == children.size() - 1) {
+                prefix = "└── class ";
+                System.out.print(o + "└── ");
+                children.get(i).printWithOffset(o + " \t");
+            } else {
+                System.out.print(o + "├── ");
+                children.get(i).printWithOffset(o + "│\t");
+            }
         }
     }
 }
