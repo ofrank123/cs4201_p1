@@ -1,10 +1,15 @@
 package minijava.symbol;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 public class MethodSignature {
     Type returnType;
     ArrayList<Type> parameters = new ArrayList<>();
+
+    public MethodSignature() {
+        this.returnType = null;
+    }
 
     public MethodSignature(String returnType) {
         this.returnType = new Type(returnType);
@@ -14,8 +19,8 @@ public class MethodSignature {
         parameters.add(new Type(type));
     }
 
-    public Type getParameterType(int idx) {
-        return parameters.get(idx);
+    public ArrayList<Type> getParameters() {
+        return parameters;
     }
 
     public Type getReturnType() {
@@ -32,7 +37,12 @@ public class MethodSignature {
             ret.deleteCharAt(ret.length() - 1);
             ret.deleteCharAt(ret.length() - 1);
         }
-        ret.append(") => ").append(returnType.toString());
+        if (returnType != null) {
+            ret.append(") => ").append(returnType.toString());
+        } else {
+            ret.append(") => void");
+        }
+
 
         return ret.toString();
     }

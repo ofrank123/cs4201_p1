@@ -3,21 +3,12 @@ package minijava;
 import minijava.symbol.MethodSignature;
 import minijava.symbol.Symbol;
 import minijava.symbol.SymbolTable;
-import minijava.symbol.Type;
+import minijava.symbol.SymbolTableType;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.lang.reflect.Method;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
-
 public class ScopeChecker extends MiniJavaGrammarBaseListener {
-
-
     MiniJavaGrammarParser parser;
-    HashMap<Symbol, SymbolTable> scopes = new HashMap<>();
-    Deque<Symbol> scopeStack = new ArrayDeque<>();
-    Symbol currentScope;
+    SymbolTable currentScope;
     MethodSignature currentMethod;
 
     boolean anyErrors;
@@ -33,60 +24,51 @@ public class ScopeChecker extends MiniJavaGrammarBaseListener {
         this.anyErrors = false;
     }
 
-    SymbolTable getCurrentSymbolTable() {
-        return scopes.get(currentScope);
+    public SymbolTable getSymbolTable() {
+        return this.currentScope;
     }
 
     boolean addBinding(String name, String typeName) {
-        return getCurrentSymbolTable().addBinding(name, typeName);
+        return currentScope.addBinding(name, typeName);
     }
 
     boolean addMethodBinding(String name) {
-        return getCurrentSymbolTable().addMethodBinding(name, currentMethod);
+        return currentScope.addMethodBinding(name, currentMethod);
     }
 
     boolean addClassDecl(String name) {
-        return getCurrentSymbolTable().addClassDecl(name);
+        return currentScope.addClassDecl(name);
     }
 
-    public void beginScope(String name) {
-        SymbolTable oldSymboltable = getCurrentSymbolTable();
-        scopeStack.push(currentScope);
-        currentScope = Symbol.symbol(name);
-        scopes.put(currentScope, new SymbolTable(oldSymboltable, name));
+    public void beginScope(String name, SymbolTableType tableType) {
+        currentScope = new SymbolTable(currentScope, name, tableType);
     }
 
     public void endScope() {
-        currentScope = scopeStack.pop();
+        currentScope = currentScope.getParent();
     }
 
     @Override
     public void enterProgram(MiniJavaGrammarParser.ProgramContext ctx) {
-        currentScope = Symbol.symbol("Global");
-        scopes.put(Symbol.symbol("Global"), new SymbolTable("Global"));
-        scopeStack.push(Symbol.symbol("Global"));
-        // create a scope for the program
-        System.out.println("Entered program");
+        currentScope = new SymbolTable("Global");
     }
 
 
     @Override
     public void exitProgram(MiniJavaGrammarParser.ProgramContext ctx) {
-        endScope();
         if (anyErrors) {
             System.exit(-1);
         }
-        getCurrentSymbolTable().print();
+        currentScope.print();
     }
 
     @Override
     public void enterMainclass(MiniJavaGrammarParser.MainclassContext ctx) {
-        TerminalNode id = ctx.ID(0);
+        TerminalNode id = ctx.ID();
         if(!addClassDecl(id.getText())) {
             printError(id.getSymbol().getLine(), "Duplicate class " + id.getText());
         }
-        beginScope(id.getText());
-        System.out.println(currentScope);
+        beginScope(id.getText(), SymbolTableType.CLASS);
     }
 
     @Override
@@ -100,39 +82,51 @@ public class ScopeChecker extends MiniJavaGrammarBaseListener {
         if(!addClassDecl(id.getText())) {
             printError(id.getSymbol().getLine(), "Duplicate class " + id.getText());
         }
-        beginScope(id.getText());
+        beginScope(id.getText(), SymbolTableType.CLASS);
     }
 
-    //
     @Override
     public void exitClassdecl(MiniJavaGrammarParser.ClassdeclContext ctx) {
         endScope();
     }
 
-    //
     @Override
     public void enterVardecl(MiniJavaGrammarParser.VardeclContext ctx) {
         TerminalNode id = ctx.ID();
-        if (!addBinding(id.getText(), id.getText())) {
-            printError(id.getSymbol().getLine(), "Cannot declare variable " + ctx.ID().getText() + ", symbol already used");
+        if (!addBinding(id.getText(), ctx.type().getText())) {
+            printError(id.getSymbol().getLine(), "Cannt declare variable " + ctx.ID().getText() + ", symbol already used");
         }
     }
 
-    //
     @Override
-    public void exitVardecl(MiniJavaGrammarParser.VardeclContext ctx) {
+    public void enterMainmethod(MiniJavaGrammarParser.MainmethodContext ctx) {
+        TerminalNode id = ctx.ID();
 
+        beginScope("main", SymbolTableType.METHOD);
+        currentMethod = new MethodSignature();
+        if (!addBinding("args", "int[]")) {
+            printError(id.getSymbol().getLine(), "Cannot declare argument " + id.getText() + ", symbol already used");
+        }
+        currentMethod.addParameter("int[]");
     }
 
-    //
+    @Override
+    public void exitMainmethod(MiniJavaGrammarParser.MainmethodContext ctx) {
+        TerminalNode id = ctx.ID();
+        endScope();
+        if (!addMethodBinding("main")) {
+            printError(id.getSymbol().getLine(), "Cannot declare method " + id.getText() + ", symbol already used");
+        }
+        currentMethod = null;
+    }
+
     @Override
     public void enterMethoddecl(MiniJavaGrammarParser.MethoddeclContext ctx) {
-        beginScope(ctx.ID().getText());
+        beginScope(ctx.ID().getText(), SymbolTableType.METHOD);
 
         currentMethod = new MethodSignature(ctx.type().getText());
     }
 
-    //
     @Override
     public void exitMethoddecl(MiniJavaGrammarParser.MethoddeclContext ctx) {
         TerminalNode id = ctx.ID();
@@ -144,7 +138,6 @@ public class ScopeChecker extends MiniJavaGrammarBaseListener {
 
     }
 
-    //
     @Override
     public void enterFormallist(MiniJavaGrammarParser.FormallistContext ctx) {
         TerminalNode id = ctx.ID();
@@ -154,12 +147,6 @@ public class ScopeChecker extends MiniJavaGrammarBaseListener {
         currentMethod.addParameter(ctx.type().getText());
     }
 
-    //
-    @Override
-    public void exitFormallist(MiniJavaGrammarParser.FormallistContext ctx) {
-    }
-
-    //
     @Override
     public void enterFormalrest(MiniJavaGrammarParser.FormalrestContext ctx) {
         TerminalNode id = ctx.ID();
@@ -170,64 +157,14 @@ public class ScopeChecker extends MiniJavaGrammarBaseListener {
         currentMethod.addParameter(ctx.type().getText());
     }
 
-
-    //
     @Override
-    public void exitFormalrest(MiniJavaGrammarParser.FormalrestContext ctx) {
-    }
-
-    //
-    @Override
-    public void enterType(MiniJavaGrammarParser.TypeContext ctx) {
-
+    public void enterAssignment(MiniJavaGrammarParser.AssignmentContext ctx){
+        // Check if var is declared
     }
 
     @Override
-    public void exitType(MiniJavaGrammarParser.TypeContext ctx) {
-        // System.out.println("exitType");
-    }
-//
-
-
-    @Override
-    public void enterStatement(MiniJavaGrammarParser.StatementContext ctx) {
-
-    }
-
-
-    @Override
-    public void exitExpr(MiniJavaGrammarParser.ExprContext ctx) {
-        //  System.out.println("exitExpr");
-    }
-
-    @Override
-    public void enterOp(MiniJavaGrammarParser.OpContext ctx) {
-        // System.out.println("enterOp");
-    }
-
-    @Override
-    public void exitOp(MiniJavaGrammarParser.OpContext ctx) {
-        // System.out.println("exitOp");
-    }
-
-    @Override
-    public void enterExprlist(MiniJavaGrammarParser.ExprlistContext ctx) {
-        //System.out.println("enterExprlist");
-    }
-
-    @Override
-    public void exitExprlist(MiniJavaGrammarParser.ExprlistContext ctx) {
-        //System.out.println("exitExprList");
-    }
-
-    @Override
-    public void enterExprrest(MiniJavaGrammarParser.ExprrestContext ctx) {
-        //System.out.println("enterExprrest");
-    }
-
-    @Override
-    public void exitExprrest(MiniJavaGrammarParser.ExprrestContext ctx) {
-        //System.out.println("exitExprrest");
+    public void enterArrayAssignment(MiniJavaGrammarParser.ArrayAssignmentContext ctx){
+        // Check if var is declared
     }
 }
 

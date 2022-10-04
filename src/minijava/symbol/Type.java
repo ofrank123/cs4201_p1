@@ -1,15 +1,13 @@
 package minijava.symbol;
 
-enum TypeE {
-    INT,
-    BOOLEAN,
-    INT_ARRAY,
-    ID
-}
-
 public class Type {
     TypeE type;
     Symbol name;
+
+    public Type() {
+        this.type = TypeE.UNKNOWN;
+        this.name = Symbol.symbol("Unknown");
+    }
 
     public Type(String name) {
         this.name = Symbol.symbol(name);
@@ -33,6 +31,19 @@ public class Type {
         }
     }
 
+    public Type(Symbol name) {
+        this(name.toString());
+    }
+
+
+    public TypeE getType() {
+        return type;
+    }
+
+    public Symbol getName() {
+        return name;
+    }
+
     @Override
     public String toString() {
         return name.toString();
@@ -49,6 +60,10 @@ public class Type {
         }
 
         Type t = (Type) o;
+
+        if (t.type == TypeE.UNKNOWN || this.type == TypeE.UNKNOWN) {
+            return true;
+        }
 
         if (this.type == TypeE.ID) {
             return t.type == TypeE.ID && t.name.equals(this.name);

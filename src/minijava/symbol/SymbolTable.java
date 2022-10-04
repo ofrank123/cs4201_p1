@@ -4,22 +4,40 @@ import java.util.*;
 
 
 public class SymbolTable {
+    Symbol name;
+    SymbolTableType tableType;
     SymbolTable parent;
-    ArrayList<SymbolTable> children = new ArrayList<>();
-    String name;
+    HashMap<Symbol, SymbolTable> children = new HashMap<>();
     HashMap<Symbol, Type> bindings = new HashMap<>();
     HashMap<Symbol, MethodSignature> methodBindings = new HashMap<>();
     HashSet<Symbol> classDeclarations = new HashSet<>();
 
     public SymbolTable(String name) {
+        this.tableType = SymbolTableType.GLOBAL;
         parent = null;
-        this.name = name;
+        this.name = Symbol.symbol(name);
     }
 
-    public SymbolTable(SymbolTable parent, String name) {
-        this.name = name;
+    public SymbolTable(SymbolTable parent, String name, SymbolTableType tableType) {
+        this.tableType = tableType;
+        this.name = Symbol.symbol(name);
         this.parent = parent;
-        parent.children.add(this);
+        parent.children.put(this.name, this);
+    }
+
+    public SymbolTable getParent() {
+        return parent;
+    }
+    public SymbolTable getEnclosingClass() {
+        SymbolTable st = this;
+        while (st != null && st.tableType != SymbolTableType.CLASS) {
+            st = st.getParent();
+        }
+        return st;
+    }
+
+    public SymbolTable getChild(String name) {
+        return children.get(Symbol.symbol(name));
     }
 
     boolean bindingAvailable(String name)  {
@@ -55,11 +73,48 @@ public class SymbolTable {
             return false;
         }
     }
+
+    public Symbol getName() {
+        return name;
+    }
+
+    // Get type of identifier
     public Type getType(String name) {
-        if (bindings.containsKey(Symbol.symbol(name))) {
-            return bindings.get(Symbol.symbol(name));
+        Symbol s = Symbol.symbol(name);
+        if (bindings.containsKey(s)) {
+            return bindings.get(s);
+        }
+        else if (classDeclarations.contains(s)) {
+            return new Type(s);
+        }
+        else if (parent != null){
+            return parent.getType(name);
+        }
+        return null;
+    }
+
+    public MethodSignature getMethodSig(Symbol name) {
+        if (methodBindings.containsKey(name)) {
+            return methodBindings.get(name);
+        }
+        return null;
+    }
+
+    public Type getClassType(String name) {
+        Symbol s = Symbol.symbol(name);
+        if (classDeclarations.contains(s)) {
+            return new Type(s);
         } else if (parent != null){
-            parent.getType(name);
+            return parent.getClassType(name);
+        }
+        return null;
+    }
+
+    public SymbolTable getClassTable(Symbol name) {
+        if (children.containsKey(name)) {
+            return children.get(name);
+        } else if (parent != null) {
+            return parent.getClassTable(name);
         }
         return null;
     }
@@ -96,15 +151,17 @@ public class SymbolTable {
             }
             System.out.println(o + prefix + classIter.next());
         }
+
+        Iterator<Map.Entry<Symbol, SymbolTable>> childIter = children.entrySet().iterator();
         for (int i = 0; i < children.size(); i++) {
             String prefix = "├── ";
             if (i == children.size() - 1) {
                 prefix = "└── class ";
                 System.out.print(o + "└── ");
-                children.get(i).printWithOffset(o + " \t");
+                childIter.next().getValue().printWithOffset(o + " \t");
             } else {
                 System.out.print(o + "├── ");
-                children.get(i).printWithOffset(o + "│\t");
+                childIter.next().getValue().printWithOffset(o + "│\t");
             }
         }
     }

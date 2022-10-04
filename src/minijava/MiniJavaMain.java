@@ -1,5 +1,6 @@
 package minijava;
 
+import minijava.symbol.SymbolTable;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 
@@ -29,6 +30,12 @@ public class MiniJavaMain {
         ScopeChecker symbolTableBuilder = new ScopeChecker(parser);
 
         walker.walk(symbolTableBuilder, tree);
+
+        SymbolTable globalST = symbolTableBuilder.getSymbolTable();
+
+        TypeChecker tc = new TypeChecker(parser, globalST);
+
+        walker.walk(tc, tree);
     }
 
 
