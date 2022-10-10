@@ -38,8 +38,8 @@ statement : LBRACE statement* RBRACE # Braces
           | RETURN expr SEMICOLON # Return
             ;
 
-expr : expr op expr # OpExpr
-     | expr LSQUARE expr RSQUARE # IndexExpr
+expr : expr LSQUARE expr RSQUARE # IndexExpr
+     | expr op expr # OpExpr
      | expr DOT LENGTH # LengthExpr
      | expr DOT ID LPAREN exprlist? RPAREN # MethodExpr
      | INTEGER # IntegerExpr

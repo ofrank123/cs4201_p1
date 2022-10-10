@@ -1481,11 +1481,11 @@ public class MiniJavaGrammarParser extends Parser {
 						_localctx = new OpExprContext(new ExprContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(226);
-						if (!(precpred(_ctx, 13))) throw new FailedPredicateException(this, "precpred(_ctx, 13)");
+						if (!(precpred(_ctx, 12))) throw new FailedPredicateException(this, "precpred(_ctx, 12)");
 						setState(227);
 						op();
 						setState(228);
-						expr(14);
+						expr(13);
 						}
 						break;
 					case 2:
@@ -1493,7 +1493,7 @@ public class MiniJavaGrammarParser extends Parser {
 						_localctx = new IndexExprContext(new ExprContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(230);
-						if (!(precpred(_ctx, 12))) throw new FailedPredicateException(this, "precpred(_ctx, 12)");
+						if (!(precpred(_ctx, 13))) throw new FailedPredicateException(this, "precpred(_ctx, 13)");
 						setState(231);
 						match(LSQUARE);
 						setState(232);
@@ -1722,9 +1722,9 @@ public class MiniJavaGrammarParser extends Parser {
 	private boolean expr_sempred(ExprContext _localctx, int predIndex) {
 		switch (predIndex) {
 		case 0:
-			return precpred(_ctx, 13);
-		case 1:
 			return precpred(_ctx, 12);
+		case 1:
+			return precpred(_ctx, 13);
 		case 2:
 			return precpred(_ctx, 11);
 		case 3:
@@ -1806,8 +1806,8 @@ public class MiniJavaGrammarParser extends Parser {
 		"\u00e0\u00e1\7&\2\2\u00e1\u00e3\3\2\2\2\u00e2\u00cc\3\2\2\2\u00e2\u00ce"+
 		"\3\2\2\2\u00e2\u00cf\3\2\2\2\u00e2\u00d0\3\2\2\2\u00e2\u00d1\3\2\2\2\u00e2"+
 		"\u00d2\3\2\2\2\u00e2\u00d8\3\2\2\2\u00e2\u00dc\3\2\2\2\u00e2\u00de\3\2"+
-		"\2\2\u00e3\u00fa\3\2\2\2\u00e4\u00e5\f\17\2\2\u00e5\u00e6\5\32\16\2\u00e6"+
-		"\u00e7\5\30\r\20\u00e7\u00f9\3\2\2\2\u00e8\u00e9\f\16\2\2\u00e9\u00ea"+
+		"\2\2\u00e3\u00fa\3\2\2\2\u00e4\u00e5\f\16\2\2\u00e5\u00e6\5\32\16\2\u00e6"+
+		"\u00e7\5\30\r\17\u00e7\u00f9\3\2\2\2\u00e8\u00e9\f\17\2\2\u00e9\u00ea"+
 		"\7\'\2\2\u00ea\u00eb\5\30\r\2\u00eb\u00ec\7(\2\2\u00ec\u00f9\3\2\2\2\u00ed"+
 		"\u00ee\f\r\2\2\u00ee\u00ef\7 \2\2\u00ef\u00f9\7\32\2\2\u00f0\u00f1\f\f"+
 		"\2\2\u00f1\u00f2\7 \2\2\u00f2\u00f3\7*\2\2\u00f3\u00f5\7%\2\2\u00f4\u00f6"+

@@ -1,5 +1,6 @@
 package minijava;
 
+import minijava.errors.ErrorHandler;
 import minijava.symbol.SymbolTable;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
@@ -27,15 +28,17 @@ public class MiniJavaMain {
 
         ParseTreeWalker walker = new ParseTreeWalker();
 
-        ScopeChecker symbolTableBuilder = new ScopeChecker(parser);
+        SymbolTableBuilder sc = new SymbolTableBuilder(parser);
 
-        walker.walk(symbolTableBuilder, tree);
+        walker.walk(sc, tree);
 
-        SymbolTable globalST = symbolTableBuilder.getSymbolTable();
+        SymbolTable.getGlobalTable().print();
 
-        TypeChecker tc = new TypeChecker(parser, globalST);
+        TypeChecker tc = new TypeChecker(parser);
 
         walker.walk(tc, tree);
+
+        ErrorHandler.printErrors();
     }
 
 

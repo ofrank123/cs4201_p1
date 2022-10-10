@@ -5,25 +5,7 @@ class Test {
 }
 
 class A {
-    int a;
-
-    public boolean Start() {
-        boolean b;
-        a = 0;
-        b = true;
-        b = A.Check(a, b);
-        return b;
-    }
-}
-
-class B {
-    int a;
-
-    public boolean Check(boolean a, int b) {
-        if (a && (b < false)) {
-            return a;
-        } else {
-            return false;
-        }
+    public A foo() {
+        return 0;
     }
 }

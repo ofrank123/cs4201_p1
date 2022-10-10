@@ -1,9 +1,8 @@
 Depends on antlr-4.7.2-complete.jar
-
 Available from:
-
 https://www.antlr.org/download/index.html
 
-
-javac *.java
-java minijava.MiniJavaMain "C:\Path\to\tests\testFile.java"
+To run:
+cd src/
+javac minijava/*.java minijava/errors/*.java minijava/symbol/*.java
+java minijava.MiniJavaMain ../tests/<TestFile>.java

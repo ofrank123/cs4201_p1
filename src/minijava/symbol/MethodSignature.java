@@ -1,6 +1,5 @@
 package minijava.symbol;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 public class MethodSignature {
@@ -38,7 +37,7 @@ public class MethodSignature {
             ret.deleteCharAt(ret.length() - 1);
         }
         if (returnType != null) {
-            ret.append(") => ").append(returnType.toString());
+            ret.append(") => ").append(returnType);
         } else {
             ret.append(") => void");
         }

@@ -9,7 +9,7 @@ public class Symbol {
     private Symbol (String name) {
         this.name = name;
     }
-    private static final Map<String, Symbol> dict = new HashMap<String, Symbol>();
+    private static final Map<String, Symbol> dict = new HashMap<>();
 
     public String toString() {
         return name;
